@@ -9,6 +9,8 @@
     <uses-permission android:name="android.permission.ANSWER_PHONE_CALLS" />
     <uses-permission android:name="android.permission.CALL_PHONE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
 
     <application
         android:allowBackup="true"
@@ -27,12 +29,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
+        
         <activity
             android:name=".CallLogActivity"
             android:exported="false"
             android:parentActivityName=".MainActivity" />
-
+        
         <service
             android:name=".CallBlockerService"
             android:permission="android.permission.BIND_SCREENING_SERVICE"
@@ -41,7 +43,7 @@
                 <action android:name="android.telecom.CallScreeningService" />
             </intent-filter>
         </service>
-
+        
         <receiver
             android:name=".CallReceiver"
             android:exported="true">
