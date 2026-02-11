@@ -6,115 +6,153 @@ import org.junit.Test
 class BlockRuleTest {
 
     @Test
-    fun `pattern with trailing wildcards matches correct length`() {
-        val rule = BlockRule(pattern = "3456****", action = BlockRule.Action.BLOCK)
+    fun testStarWildcard_matchesZeroOrMoreDigits() {
+        val rule = BlockRule(pattern = "138*", action = BlockRule.Action.BLOCK)
         
-        assertTrue(rule.matches("34561234"))
-        assertTrue(rule.matches("34560000"))
-        assertTrue(rule.matches("34569999"))
+        assertTrue(rule.matches("138"))           // Zero digits after
+        assertTrue(rule.matches("1381"))          // One digit
+        assertTrue(rule.matches("13812345678"))   // Many digits
+        assertFalse(rule.matches("139"))          // Wrong prefix
+        assertFalse(rule.matches("13"))           // Incomplete prefix
     }
 
     @Test
-    fun `pattern rejects wrong length numbers`() {
-        val rule = BlockRule(pattern = "3456****", action = BlockRule.Action.BLOCK)
+    fun testAllNonDigitsStripped() {
+        val rule = BlockRule(pattern = "183234*", action = BlockRule.Action.BLOCK)
         
-        assertFalse(rule.matches("3456123"))    // too short
-        assertFalse(rule.matches("345612345"))  // too long
-        assertFalse(rule.matches("3456"))       // way too short
+        // All these should match after stripping non-digits
+        assertTrue(rule.matches("183+23456312"))   // + in middle stripped
+        assertTrue(rule.matches("+18323456312"))   // + at start stripped
+        assertTrue(rule.matches("183-234-5678"))   // dashes stripped
+        assertTrue(rule.matches("183 234 5678"))   // spaces stripped
+        assertTrue(rule.matches("(183) 234-5678")) // parentheses stripped
+        assertTrue(rule.matches("18323456312"))    // clean number
     }
 
     @Test
-    fun `pattern rejects wrong prefix`() {
-        val rule = BlockRule(pattern = "3456****", action = BlockRule.Action.BLOCK)
+    fun testCountryCodePatternChina() {
+        val rule = BlockRule(pattern = "86*", action = BlockRule.Action.BLOCK)
         
-        assertFalse(rule.matches("12341234"))
-        assertFalse(rule.matches("34571234"))
-        assertFalse(rule.matches("00001234"))
+        assertTrue(rule.matches("+8613812345678"))  // + stripped
+        assertTrue(rule.matches("8613812345678"))   // No +
+        assertTrue(rule.matches("+86"))             // Just country code
+        assertFalse(rule.matches("+1234567890"))    // US number (becomes 1234567890)
     }
 
     @Test
-    fun `pattern with leading wildcards`() {
-        val rule = BlockRule(pattern = "****1234", action = BlockRule.Action.BLOCK)
+    fun testCountryCodePatternUS() {
+        val rule = BlockRule(pattern = "1*", action = BlockRule.Action.BLOCK)
         
-        assertTrue(rule.matches("00001234"))
-        assertTrue(rule.matches("99991234"))
-        assertTrue(rule.matches("56781234"))
-        assertFalse(rule.matches("00005678"))
+        assertTrue(rule.matches("+14155551234"))
+        assertTrue(rule.matches("14155551234"))
+        assertFalse(rule.matches("+44123456789"))  // UK (becomes 44123456789)
     }
 
     @Test
-    fun `pattern with middle wildcards`() {
-        val rule = BlockRule(pattern = "34**5678", action = BlockRule.Action.BLOCK)
+    fun testQuestionWildcard_matchesExactlyOneDigit() {
+        val rule = BlockRule(pattern = "138????", action = BlockRule.Action.BLOCK)
         
-        assertTrue(rule.matches("34005678"))
-        assertTrue(rule.matches("34995678"))
-        assertFalse(rule.matches("34001234"))
-        assertFalse(rule.matches("12005678"))
+        assertTrue(rule.matches("1380000"))       // Exactly 4 digits after
+        assertTrue(rule.matches("1389999"))       // Exactly 4 digits after
+        assertFalse(rule.matches("138000"))       // Only 3 digits after
+        assertFalse(rule.matches("13800000"))     // 5 digits after
     }
 
     @Test
-    fun `exact number match without wildcards`() {
-        val rule = BlockRule(pattern = "12345678", action = BlockRule.Action.BLOCK)
+    fun testExactNumberMatch() {
+        val rule = BlockRule(pattern = "13812345678", action = BlockRule.Action.BLOCK)
         
-        assertTrue(rule.matches("12345678"))
-        assertFalse(rule.matches("12345679"))
-        assertFalse(rule.matches("12345677"))
+        assertTrue(rule.matches("13812345678"))
+        assertTrue(rule.matches("+13812345678"))   // + stripped
+        assertTrue(rule.matches("138-1234-5678"))  // dashes stripped
+        assertFalse(rule.matches("138123456789"))  // Extra digit
+        assertFalse(rule.matches("1381234567"))    // Missing digit
     }
 
     @Test
-    fun `all wildcards matches any number of same length`() {
-        val rule = BlockRule(pattern = "********", action = BlockRule.Action.BLOCK)
+    fun testMixedWildcards() {
+        val rule = BlockRule(pattern = "138????*", action = BlockRule.Action.BLOCK)
         
-        assertTrue(rule.matches("00000000"))
-        assertTrue(rule.matches("99999999"))
-        assertTrue(rule.matches("12345678"))
-        assertFalse(rule.matches("1234567"))   // wrong length
-        assertFalse(rule.matches("123456789")) // wrong length
+        assertTrue(rule.matches("1380000"))       // 4 digits after prefix, 0 more
+        assertTrue(rule.matches("13800001234"))   // 4 digits + more
+        assertFalse(rule.matches("138000"))       // Only 3 digits after
     }
 
     @Test
-    fun `disabled rule does not match`() {
-        val rule = BlockRule(pattern = "3456****", action = BlockRule.Action.BLOCK, enabled = false)
+    fun testMatchAllPattern() {
+        val rule = BlockRule(pattern = "*", action = BlockRule.Action.BLOCK)
         
-        assertFalse(rule.matches("34561234"))
+        assertTrue(rule.matches("1"))
+        assertTrue(rule.matches("13812345678"))
+        assertTrue(rule.matches("+8613812345678"))
     }
 
     @Test
-    fun `matches with country code prefix`() {
-        val rule = BlockRule(pattern = "34561234", action = BlockRule.Action.BLOCK)
+    fun testEndingPattern() {
+        val rule = BlockRule(pattern = "*1234", action = BlockRule.Action.BLOCK)
         
-        // Should match with various country code formats
-        assertTrue(rule.matches("+134561234"))   // +1 (US)
-        assertTrue(rule.matches("+8634561234"))  // +86 (China)
+        assertTrue(rule.matches("1234"))
+        assertTrue(rule.matches("001234"))
+        assertTrue(rule.matches("+861234"))       // + stripped -> 861234
+        assertFalse(rule.matches("12345"))
     }
 
     @Test
-    fun `matches strips non-digit characters`() {
-        val rule = BlockRule(pattern = "34561234", action = BlockRule.Action.BLOCK)
+    fun testMiddleWildcard() {
+        val rule = BlockRule(pattern = "138*5678", action = BlockRule.Action.BLOCK)
         
-        assertTrue(rule.matches("3456-1234"))
-        assertTrue(rule.matches("3456 1234"))
-        assertTrue(rule.matches("(345) 612-34"))
+        assertTrue(rule.matches("1385678"))       // 0 digits in middle
+        assertTrue(rule.matches("13805678"))      // 1 digit in middle
+        assertTrue(rule.matches("138123455678"))  // Many digits in middle
+        assertFalse(rule.matches("1385679"))      // Wrong ending
     }
 
     @Test
-    fun `ten digit pattern for toll-free numbers`() {
-        val rule = BlockRule(pattern = "1800******", action = BlockRule.Action.VOICEMAIL)
+    fun testDisabledRuleDoesNotMatch() {
+        val rule = BlockRule(pattern = "138*", action = BlockRule.Action.BLOCK, enabled = false)
         
-        assertTrue(rule.matches("1800123456"))
-        assertTrue(rule.matches("1800000000"))
-        assertFalse(rule.matches("1801123456"))
-        assertFalse(rule.matches("180012345"))  // too short
+        assertFalse(rule.matches("13812345678"))
     }
 
     @Test
-    fun `different actions are stored correctly`() {
-        val blockRule = BlockRule(pattern = "1234", action = BlockRule.Action.BLOCK)
-        val silenceRule = BlockRule(pattern = "1234", action = BlockRule.Action.SILENCE)
-        val voicemailRule = BlockRule(pattern = "1234", action = BlockRule.Action.VOICEMAIL)
+    fun testTollFreePattern() {
+        val rule = BlockRule(pattern = "1800*", action = BlockRule.Action.BLOCK)
+        
+        assertTrue(rule.matches("18001234567"))
+        assertTrue(rule.matches("+18001234567"))  // + stripped
+        assertFalse(rule.matches("1888123456"))
+    }
+
+    @Test
+    fun testActionTypesStored() {
+        val blockRule = BlockRule(pattern = "123", action = BlockRule.Action.BLOCK)
+        val silenceRule = BlockRule(pattern = "456", action = BlockRule.Action.SILENCE)
+        val voicemailRule = BlockRule(pattern = "789", action = BlockRule.Action.VOICEMAIL)
         
         assertEquals(BlockRule.Action.BLOCK, blockRule.action)
         assertEquals(BlockRule.Action.SILENCE, silenceRule.action)
         assertEquals(BlockRule.Action.VOICEMAIL, voicemailRule.action)
+    }
+
+    @Test
+    fun testFixedLengthChinaMobile() {
+        // Match exactly 11 digit China mobile numbers starting with 138
+        val rule = BlockRule(pattern = "138????????", action = BlockRule.Action.BLOCK)
+        
+        assertTrue(rule.matches("13812345678"))   // 11 digits
+        assertTrue(rule.matches("+13812345678"))  // + stripped
+        assertTrue(rule.matches("138-1234-5678")) // dashes stripped
+        assertFalse(rule.matches("13912345678"))  // Wrong prefix
+        assertFalse(rule.matches("1381234567"))   // Only 10 digits
+        assertFalse(rule.matches("138123456789")) // 12 digits
+    }
+
+    @Test
+    fun testEmptyAndInvalidInput() {
+        val rule = BlockRule(pattern = "138*", action = BlockRule.Action.BLOCK)
+        
+        assertFalse(rule.matches(""))             // Empty
+        assertFalse(rule.matches("   "))          // Whitespace only
+        assertFalse(rule.matches("+-"))           // No digits
     }
 }

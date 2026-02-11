@@ -16,13 +16,32 @@
         android:background="@color/primary"
         android:layout_alignParentTop="true">
 
-        <TextView
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="📵 Phone Blocker"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            android:textColor="@android:color/white" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="📵 Phone Blocker"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:textColor="@android:color/white" />
+
+            <Button
+                android:id="@+id/callLogButton"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="📋 Log"
+                android:textSize="12sp"
+                android:backgroundTint="#FFFFFF"
+                android:textColor="@color/primary"
+                android:minWidth="0dp"
+                android:paddingHorizontal="12dp" />
+        </LinearLayout>
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -53,7 +72,7 @@
         android:id="@+id/emptyView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="No rules yet.\n\nTap + to add a block rule.\n\nUse * as wildcard:\n3456**** blocks 8-digit numbers starting with 3456"
+        android:text="No rules yet.\n\nTap + to add a block rule.\n\nPattern wildcards:\n* = any digits (e.g. +86* blocks all China)\n? = one digit (e.g. 138???????? blocks 138xxxxxxxx)"
         android:textSize="16sp"
         android:textAlignment="center"
         android:textColor="@color/text_secondary"

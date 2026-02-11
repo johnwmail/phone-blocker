@@ -16,12 +16,21 @@ class CallBlockerService : CallScreeningService() {
         
         val matchingRule = RuleStorage.findMatchingRule(this, phoneNumber)
         
+        // Log the call
+        val logEntry = CallLogEntry(
+            rawNumber = phoneNumber,
+            timestamp = System.currentTimeMillis(),
+            wasBlocked = matchingRule != null,
+            matchedPattern = matchingRule?.pattern,
+            action = matchingRule?.action?.name
+        )
+        CallLogStorage.addEntry(this, logEntry)
+        
         val response = if (matchingRule != null) {
-            Log.d(TAG, "Found matching rule: ${matchingRule.pattern} -> ${matchingRule.action}")
+            Log.d(TAG, "Blocking call (rule: ${matchingRule.pattern}, action: ${matchingRule.action})")
             
             when (matchingRule.action) {
                 BlockRule.Action.BLOCK -> {
-                    // Reject the call completely
                     CallResponse.Builder()
                         .setDisallowCall(true)
                         .setRejectCall(true)
@@ -30,8 +39,6 @@ class CallBlockerService : CallScreeningService() {
                         .build()
                 }
                 BlockRule.Action.SILENCE -> {
-                    // Silence the call (no ring), but don't reject
-                    // Call will still appear and can go to voicemail
                     CallResponse.Builder()
                         .setDisallowCall(false)
                         .setRejectCall(false)
@@ -41,7 +48,6 @@ class CallBlockerService : CallScreeningService() {
                         .build()
                 }
                 BlockRule.Action.VOICEMAIL -> {
-                    // Reject call so it goes to voicemail
                     CallResponse.Builder()
                         .setDisallowCall(true)
                         .setRejectCall(true)
@@ -51,7 +57,7 @@ class CallBlockerService : CallScreeningService() {
                 }
             }
         } else {
-            // No matching rule - allow the call
+            Log.d(TAG, "Allowing call (no matching rule)")
             CallResponse.Builder()
                 .setDisallowCall(false)
                 .setRejectCall(false)

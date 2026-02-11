@@ -28,6 +28,11 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".CallLogActivity"
+            android:exported="false"
+            android:parentActivityName=".MainActivity" />
+
         <service
             android:name=".CallBlockerService"
             android:permission="android.permission.BIND_SCREENING_SERVICE"

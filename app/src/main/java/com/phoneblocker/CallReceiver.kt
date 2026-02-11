@@ -25,6 +25,16 @@ class CallReceiver : BroadcastReceiver() {
         if (state == TelephonyManager.EXTRA_STATE_RINGING && phoneNumber != null) {
             val matchingRule = RuleStorage.findMatchingRule(context, phoneNumber)
             
+            // Log the call
+            val logEntry = CallLogEntry(
+                rawNumber = phoneNumber,
+                timestamp = System.currentTimeMillis(),
+                wasBlocked = matchingRule != null,
+                matchedPattern = matchingRule?.pattern,
+                action = matchingRule?.action?.name
+            )
+            CallLogStorage.addEntry(context, logEntry)
+            
             if (matchingRule != null) {
                 Log.d(TAG, "Blocking call from $phoneNumber (rule: ${matchingRule.pattern})")
                 
@@ -34,49 +44,26 @@ class CallReceiver : BroadcastReceiver() {
                         endCall(context)
                     }
                     BlockRule.Action.SILENCE -> {
-                        // For silence, we let it ring but could mute
-                        // Most effective is still to end the call
                         endCall(context)
                     }
                 }
+            } else {
+                Log.d(TAG, "Allowing call from $phoneNumber (no matching rule)")
             }
         }
     }
     
     private fun endCall(context: Context) {
         try {
+            val telecomManager = context.getSystemService(Context.TELECOM_SERVICE) as TelecomManager
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                // Android 9+ method
-                val telecomManager = context.getSystemService(Context.TELECOM_SERVICE) as TelecomManager
-                try {
-                    telecomManager.endCall()
-                    Log.d(TAG, "Call ended via TelecomManager")
-                } catch (e: SecurityException) {
-                    Log.e(TAG, "SecurityException ending call: ${e.message}")
-                }
-            } else {
-                // Older method using reflection
-                endCallViaReflection(context)
+                telecomManager.endCall()
+                Log.d(TAG, "Call ended via TelecomManager")
             }
+        } catch (e: SecurityException) {
+            Log.e(TAG, "SecurityException ending call: ${e.message}")
         } catch (e: Exception) {
             Log.e(TAG, "Error ending call: ${e.message}")
-        }
-    }
-    
-    @Suppress("DEPRECATION")
-    private fun endCallViaReflection(context: Context) {
-        try {
-            val telephonyManager = context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
-            val clazz = Class.forName(telephonyManager.javaClass.name)
-            val method = clazz.getDeclaredMethod("getITelephony")
-            method.isAccessible = true
-            val telephonyService = method.invoke(telephonyManager)
-            val telephonyServiceClass = Class.forName(telephonyService.javaClass.name)
-            val endCallMethod = telephonyServiceClass.getDeclaredMethod("endCall")
-            endCallMethod.invoke(telephonyService)
-            Log.d(TAG, "Call ended via reflection")
-        } catch (e: Exception) {
-            Log.e(TAG, "Reflection method failed: ${e.message}")
         }
     }
 }

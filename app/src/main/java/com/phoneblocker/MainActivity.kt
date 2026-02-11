@@ -27,6 +27,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var emptyView: TextView
     private lateinit var statusText: TextView
     private lateinit var setupButton: Button
+    private lateinit var callLogButton: Button
     private lateinit var adapter: RuleAdapter
     private var rules = mutableListOf<BlockRule>()
     
@@ -50,6 +51,7 @@ class MainActivity : AppCompatActivity() {
         emptyView = findViewById(R.id.emptyView)
         statusText = findViewById(R.id.statusText)
         setupButton = findViewById(R.id.setupButton)
+        callLogButton = findViewById(R.id.callLogButton)
         
         adapter = RuleAdapter(
             rules,
@@ -66,6 +68,10 @@ class MainActivity : AppCompatActivity() {
         
         setupButton.setOnClickListener {
             requestPermissionsAndRole()
+        }
+        
+        callLogButton.setOnClickListener {
+            startActivity(Intent(this, CallLogActivity::class.java))
         }
         
         loadRules()
@@ -173,7 +179,7 @@ class MainActivity : AppCompatActivity() {
                     loadRules()
                     Toast.makeText(this, "Rule added!", Toast.LENGTH_SHORT).show()
                 } else {
-                    Toast.makeText(this, "Invalid pattern. Use digits and * only.", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this, "Invalid pattern. Use digits and wildcards (* ?) only.", Toast.LENGTH_LONG).show()
                 }
             }
             .setNegativeButton("Cancel", null)
@@ -182,7 +188,8 @@ class MainActivity : AppCompatActivity() {
     
     private fun isValidPattern(pattern: String): Boolean {
         if (pattern.isEmpty()) return false
-        return pattern.all { it.isDigit() || it == '*' }
+        // Allow digits, * (zero or more), ? (exactly one)
+        return pattern.all { it.isDigit() || it == '*' || it == '?' }
     }
     
     private fun deleteRule(rule: BlockRule) {
