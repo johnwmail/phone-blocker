@@ -33,13 +33,13 @@ class MainActivity : AppCompatActivity() {
     
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
+    ) { _ ->
         updateStatus()
     }
     
     private val requestRoleLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
-    ) { result ->
+    ) { _ ->
         updateStatus()
     }
     
@@ -141,6 +141,8 @@ class MainActivity : AppCompatActivity() {
     
     private fun loadRules() {
         rules = RuleStorage.loadRules(this)
+        // Sort: ALLOW rules first, then others
+        rules.sortBy { if (it.action == BlockRule.Action.ALLOW) 0 else 1 }
         adapter.updateRules(rules)
         updateEmptyView()
     }
@@ -160,18 +162,20 @@ class MainActivity : AppCompatActivity() {
         val patternInput = dialogView.findViewById<EditText>(R.id.patternInput)
         val actionSpinner = dialogView.findViewById<Spinner>(R.id.actionSpinner)
         
-        val actions = arrayOf("🚫 Block", "🔇 Silence", "📞 Voicemail")
+        val actions = arrayOf("✅ Allow (priority)", "🚫 Block", "🔇 Silence", "📞 Voicemail")
         actionSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, actions)
+        actionSpinner.setSelection(1) // Default to Block
         
         AlertDialog.Builder(this)
-            .setTitle("Add Block Rule")
+            .setTitle("Add Rule")
             .setView(dialogView)
             .setPositiveButton("Add") { _, _ ->
                 val pattern = patternInput.text.toString().trim()
                 if (isValidPattern(pattern)) {
                     val action = when (actionSpinner.selectedItemPosition) {
-                        0 -> BlockRule.Action.BLOCK
-                        1 -> BlockRule.Action.SILENCE
+                        0 -> BlockRule.Action.ALLOW
+                        1 -> BlockRule.Action.BLOCK
+                        2 -> BlockRule.Action.SILENCE
                         else -> BlockRule.Action.VOICEMAIL
                     }
                     val rule = BlockRule(pattern = pattern, action = action)

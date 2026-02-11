@@ -23,32 +23,39 @@ class CallReceiver : BroadcastReceiver() {
         Log.d(TAG, "Phone state: $state, number: $phoneNumber")
         
         if (state == TelephonyManager.EXTRA_STATE_RINGING && phoneNumber != null) {
-            val matchingRule = RuleStorage.findMatchingRule(context, phoneNumber)
+            val (matchedRule, isAllowed) = RuleStorage.findMatchingRuleForLog(context, phoneNumber)
+            
+            // Determine if it matched an ALLOW rule or just no rule matched
+            val matchedAllowRule = isAllowed && matchedRule != null
             
             // Log the call
             val logEntry = CallLogEntry(
                 rawNumber = phoneNumber,
                 timestamp = System.currentTimeMillis(),
-                wasBlocked = matchingRule != null,
-                matchedPattern = matchingRule?.pattern,
-                action = matchingRule?.action?.name
+                wasBlocked = !isAllowed,
+                matchedPattern = matchedRule?.pattern,
+                action = matchedRule?.action?.name,
+                matchedAllowRule = matchedAllowRule
             )
             CallLogStorage.addEntry(context, logEntry)
             
-            if (matchingRule != null) {
-                Log.d(TAG, "Blocking call from $phoneNumber (rule: ${matchingRule.pattern})")
+            if (!isAllowed && matchedRule != null) {
+                Log.d(TAG, "Blocking call from $phoneNumber (rule: ${matchedRule.pattern}, action: ${matchedRule.action})")
                 
-                when (matchingRule.action) {
+                when (matchedRule.action) {
                     BlockRule.Action.BLOCK,
-                    BlockRule.Action.VOICEMAIL -> {
-                        endCall(context)
-                    }
+                    BlockRule.Action.VOICEMAIL,
                     BlockRule.Action.SILENCE -> {
                         endCall(context)
                     }
+                    BlockRule.Action.ALLOW -> {
+                        // Should not reach here
+                        Log.d(TAG, "Allowing call from $phoneNumber")
+                    }
                 }
             } else {
-                Log.d(TAG, "Allowing call from $phoneNumber (no matching rule)")
+                Log.d(TAG, "Allowing call from $phoneNumber" + 
+                    if (matchedRule != null) " (ALLOW rule: ${matchedRule.pattern})" else " (no matching rule)")
             }
         }
     }

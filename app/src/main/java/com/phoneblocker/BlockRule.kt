@@ -9,6 +9,7 @@ data class BlockRule(
     val enabled: Boolean = true
 ) {
     enum class Action {
+        ALLOW,           // Allow the call (highest priority)
         BLOCK,           // Reject the call completely
         SILENCE,         // Don't ring, let it go to voicemail
         VOICEMAIL        // Send directly to voicemail

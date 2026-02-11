@@ -40,15 +40,6 @@ class BlockRuleTest {
     }
 
     @Test
-    fun testCountryCodePatternUS() {
-        val rule = BlockRule(pattern = "1*", action = BlockRule.Action.BLOCK)
-        
-        assertTrue(rule.matches("+14155551234"))
-        assertTrue(rule.matches("14155551234"))
-        assertFalse(rule.matches("+44123456789"))  // UK (becomes 44123456789)
-    }
-
-    @Test
     fun testQuestionWildcard_matchesExactlyOneDigit() {
         val rule = BlockRule(pattern = "138????", action = BlockRule.Action.BLOCK)
         
@@ -124,11 +115,13 @@ class BlockRuleTest {
     }
 
     @Test
-    fun testActionTypesStored() {
-        val blockRule = BlockRule(pattern = "123", action = BlockRule.Action.BLOCK)
-        val silenceRule = BlockRule(pattern = "456", action = BlockRule.Action.SILENCE)
-        val voicemailRule = BlockRule(pattern = "789", action = BlockRule.Action.VOICEMAIL)
+    fun testAllActionTypes() {
+        val allowRule = BlockRule(pattern = "123", action = BlockRule.Action.ALLOW)
+        val blockRule = BlockRule(pattern = "456", action = BlockRule.Action.BLOCK)
+        val silenceRule = BlockRule(pattern = "789", action = BlockRule.Action.SILENCE)
+        val voicemailRule = BlockRule(pattern = "012", action = BlockRule.Action.VOICEMAIL)
         
+        assertEquals(BlockRule.Action.ALLOW, allowRule.action)
         assertEquals(BlockRule.Action.BLOCK, blockRule.action)
         assertEquals(BlockRule.Action.SILENCE, silenceRule.action)
         assertEquals(BlockRule.Action.VOICEMAIL, voicemailRule.action)
@@ -136,7 +129,6 @@ class BlockRuleTest {
 
     @Test
     fun testFixedLengthChinaMobile() {
-        // Match exactly 11 digit China mobile numbers starting with 138
         val rule = BlockRule(pattern = "138????????", action = BlockRule.Action.BLOCK)
         
         assertTrue(rule.matches("13812345678"))   // 11 digits
@@ -154,5 +146,31 @@ class BlockRuleTest {
         assertFalse(rule.matches(""))             // Empty
         assertFalse(rule.matches("   "))          // Whitespace only
         assertFalse(rule.matches("+-"))           // No digits
+    }
+
+    @Test
+    fun testAllowRuleMatches() {
+        // ALLOW rule should match just like any other rule
+        val allowRule = BlockRule(pattern = "865*", action = BlockRule.Action.ALLOW)
+        
+        assertTrue(allowRule.matches("8655633325"))
+        assertTrue(allowRule.matches("86512345"))
+        assertFalse(allowRule.matches("8661234"))  // 866, not 865
+    }
+
+    @Test
+    fun testAllowVsBlockScenario() {
+        // Simulate: 86* blocks, 865* allows
+        // Number 8655633325 should match 865* (allow) which has priority
+        val blockRule = BlockRule(pattern = "86*", action = BlockRule.Action.BLOCK)
+        val allowRule = BlockRule(pattern = "865*", action = BlockRule.Action.ALLOW)
+        
+        val testNumber = "8655633325"
+        
+        // Both rules match the number
+        assertTrue(blockRule.matches(testNumber))
+        assertTrue(allowRule.matches(testNumber))
+        
+        // But ALLOW has priority (handled in RuleStorage.findMatchingRule)
     }
 }

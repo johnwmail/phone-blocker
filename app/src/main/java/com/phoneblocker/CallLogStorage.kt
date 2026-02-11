@@ -12,11 +12,26 @@ data class CallLogEntry(
     val timestamp: Long,
     val wasBlocked: Boolean,
     val matchedPattern: String? = null,
-    val action: String? = null
+    val action: String? = null,
+    val matchedAllowRule: Boolean = false  // true if matched ALLOW rule, false if no match
 ) {
     fun getFormattedTime(): String {
         val sdf = SimpleDateFormat("MM-dd HH:mm:ss", Locale.getDefault())
         return sdf.format(Date(timestamp))
+    }
+    
+    /**
+     * Get display status:
+     * - Blocked: shows action (BLOCK, SILENCE, VOICEMAIL)
+     * - Allowed by rule: shows "ALLOW" with pattern
+     * - Allowed by default: shows "ALLOWED" (no pattern)
+     */
+    fun getDisplayStatus(): Pair<String, Boolean> {
+        return when {
+            wasBlocked -> Pair(action ?: "BLOCKED", false)
+            matchedAllowRule -> Pair("ALLOW", true)  // Matched an ALLOW rule
+            else -> Pair("ALLOWED", true)  // No rule matched
+        }
     }
 }
 

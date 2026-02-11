@@ -91,15 +91,33 @@ class CallLogActivity : AppCompatActivity() {
                 numberText.text = entry.rawNumber
                 timeText.text = entry.getFormattedTime()
                 
-                if (entry.wasBlocked) {
-                    statusText.text = "🚫 ${entry.action ?: "BLOCKED"}"
-                    statusText.setTextColor(0xFFE53935.toInt())
-                    patternText.text = "Pattern: ${entry.matchedPattern}"
-                    patternText.visibility = View.VISIBLE
-                } else {
-                    statusText.text = "✅ ALLOWED"
-                    statusText.setTextColor(0xFF43A047.toInt())
-                    patternText.visibility = View.GONE
+                when {
+                    entry.wasBlocked -> {
+                        // Blocked: BLOCK, SILENCE, VOICEMAIL
+                        val icon = when (entry.action) {
+                            "BLOCK" -> "🚫"
+                            "SILENCE" -> "🔇"
+                            "VOICEMAIL" -> "📞"
+                            else -> "🚫"
+                        }
+                        statusText.text = "$icon ${entry.action}"
+                        statusText.setTextColor(0xFFE53935.toInt())
+                        patternText.text = "Pattern: ${entry.matchedPattern}"
+                        patternText.visibility = View.VISIBLE
+                    }
+                    entry.matchedAllowRule -> {
+                        // Matched ALLOW rule
+                        statusText.text = "✅ ALLOW"
+                        statusText.setTextColor(0xFF43A047.toInt())
+                        patternText.text = "Pattern: ${entry.matchedPattern}"
+                        patternText.visibility = View.VISIBLE
+                    }
+                    else -> {
+                        // No rule matched
+                        statusText.text = "⚪ NOT MATCH"
+                        statusText.setTextColor(0xFF757575.toInt())
+                        patternText.visibility = View.GONE
+                    }
                 }
             }
         }

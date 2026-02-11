@@ -9,16 +9,14 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
 class RuleAdapter(
-    private val rules: MutableList<BlockRule>,
+    private var rules: MutableList<BlockRule>,
     private val onDelete: (BlockRule) -> Unit,
     private val onToggle: (BlockRule, Boolean) -> Unit
 ) : RecyclerView.Adapter<RuleAdapter.ViewHolder>() {
 
-    class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val patternText: TextView = view.findViewById(R.id.patternText)
-        val actionText: TextView = view.findViewById(R.id.actionText)
-        val enableSwitch: Switch = view.findViewById(R.id.enableSwitch)
-        val deleteButton: ImageButton = view.findViewById(R.id.deleteButton)
+    fun updateRules(newRules: MutableList<BlockRule>) {
+        rules = newRules
+        notifyDataSetChanged()
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -28,31 +26,39 @@ class RuleAdapter(
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val rule = rules[position]
-        
-        holder.patternText.text = rule.pattern
-        holder.actionText.text = when (rule.action) {
-            BlockRule.Action.BLOCK -> "🚫 Block"
-            BlockRule.Action.SILENCE -> "🔇 Silence"
-            BlockRule.Action.VOICEMAIL -> "📞 Voicemail"
-        }
-        
-        holder.enableSwitch.setOnCheckedChangeListener(null)
-        holder.enableSwitch.isChecked = rule.enabled
-        holder.enableSwitch.setOnCheckedChangeListener { _, isChecked ->
-            onToggle(rule, isChecked)
-        }
-        
-        holder.deleteButton.setOnClickListener {
-            onDelete(rule)
-        }
+        holder.bind(rules[position])
     }
 
     override fun getItemCount() = rules.size
-    
-    fun updateRules(newRules: List<BlockRule>) {
-        rules.clear()
-        rules.addAll(newRules)
-        notifyDataSetChanged()
+
+    inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        private val patternText: TextView = view.findViewById(R.id.patternText)
+        private val actionText: TextView = view.findViewById(R.id.actionText)
+        private val enableSwitch: Switch = view.findViewById(R.id.enableSwitch)
+        private val deleteButton: ImageButton = view.findViewById(R.id.deleteButton)
+
+        fun bind(rule: BlockRule) {
+            patternText.text = rule.pattern
+            
+            val (icon, label, color) = when (rule.action) {
+                BlockRule.Action.ALLOW -> Triple("✅", "ALLOW", 0xFF43A047.toInt())
+                BlockRule.Action.BLOCK -> Triple("🚫", "BLOCK", 0xFFE53935.toInt())
+                BlockRule.Action.SILENCE -> Triple("🔇", "SILENCE", 0xFFFF9800.toInt())
+                BlockRule.Action.VOICEMAIL -> Triple("📞", "VOICEMAIL", 0xFF1976D2.toInt())
+            }
+            
+            actionText.text = "$icon $label"
+            actionText.setTextColor(color)
+            
+            enableSwitch.setOnCheckedChangeListener(null)
+            enableSwitch.isChecked = rule.enabled
+            enableSwitch.setOnCheckedChangeListener { _, isChecked ->
+                onToggle(rule, isChecked)
+            }
+
+            deleteButton.setOnClickListener {
+                onDelete(rule)
+            }
+        }
     }
 }
