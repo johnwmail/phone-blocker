@@ -2,6 +2,8 @@
 
 A simple Android app to block unwanted calls using pattern matching with wildcards.
 
+**🌐 [Live Preview](https://johnwmail.github.io/phone-blocker/preview.html)** | **📦 [Download APK](https://github.com/johnwmail/phone-blocker/releases/latest/download/PhoneBlocker-release.apk)**
+
 ## Features
 
 - **Pattern Matching** - Flexible wildcards for matching phone numbers
@@ -12,8 +14,8 @@ A simple Android app to block unwanted calls using pattern matching with wildcar
 - **Four Actions:**
   - ✅ **Allow** - Whitelist (highest priority, checked first)
   - 🚫 **Block** - Reject the call completely
-  - 🔇 **Silence** - Silent rejection
-  - 📞 **Voicemail** - Send to voicemail
+  - 🔇 **Silence** - Mute ringer, call still visible
+  - 📞 **Voicemail** - Decline to voicemail
 - **Priority System** - ALLOW rules are always checked first
 - **Call Log** - View incoming calls with raw number format
 - **Enable/Disable** - Toggle individual rules on/off
@@ -26,16 +28,12 @@ A simple Android app to block unwanted calls using pattern matching with wildcar
 
 ## Installation
 
-### From APK
+### From GitHub Releases (Recommended)
 
-1. Download `PhoneBlocker.apk` to your Android phone
+1. Download the latest APK from [Releases](https://github.com/johnwmail/phone-blocker/releases/latest)
 2. Enable "Install from unknown sources" in Settings
 3. Open the APK file to install
 4. Launch the app and grant permissions when prompted
-
-### From GitHub Releases
-
-Download the latest APK from [Releases](https://github.com/johnwmail/phone-blocker/releases)
 
 ### Setup Permissions
 
@@ -160,6 +158,9 @@ phone-blocker/
 ├── .github/workflows/
 │   ├── test.yml                 # CI: test & lint on push/PR
 │   └── release.yml              # CI: build & release on tag
+├── docs/                        # GitHub Pages
+│   ├── index.html               # Download page
+│   └── preview.html             # Interactive UI preview
 ├── app/
 │   ├── src/main/
 │   │   ├── java/com/phoneblocker/
@@ -201,6 +202,14 @@ The app uses two methods to block calls:
    - Listens for `PHONE_STATE` broadcasts
    - Uses `TelecomManager.endCall()` to reject calls
    - Works on most phones including custom ROMs
+
+### Action Behaviors
+
+| Action | Behavior | Notification |
+|--------|----------|--------------|
+| **Block** | Reject immediately | No notification |
+| **Silence** | Mute ringer, call visible | User can answer/decline |
+| **Voicemail** | Decline (routes to voicemail) | Missed call notification |
 
 ### Rule Priority
 
@@ -253,8 +262,8 @@ The project uses GitHub Actions for continuous integration:
 
 To create a release:
 ```bash
-git tag v0.0.2
-git push origin v0.0.2
+git tag v0.0.3
+git push origin v0.0.3
 ```
 
 ## License
@@ -271,5 +280,6 @@ Pull requests welcome! Please:
 ## Links
 
 - **GitHub:** https://github.com/johnwmail/phone-blocker
+- **Live Preview:** https://johnwmail.github.io/phone-blocker/preview.html
+- **Download:** https://johnwmail.github.io/phone-blocker/
 - **Releases:** https://github.com/johnwmail/phone-blocker/releases
-- **Preview:** https://phone-blocker.exe.xyz:8000/preview.html

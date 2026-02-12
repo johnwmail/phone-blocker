@@ -13,8 +13,8 @@ on:
       create_release:
         description: 'Create GitHub Release'
         required: false
+        default: 'false'
         type: boolean
-        default: false
 
 permissions:
   contents: write
@@ -46,56 +46,65 @@ jobs:
       - name: Build Release APK
         run: ./gradlew assembleRelease
 
-      - name: Get version
+      - name: Get version name
         id: get_version
         run: |
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
-          else
+          if [ "${{ github.event_name }}" == "push" ]; then
             echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          else
+            echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
           fi
 
       - name: Rename APKs
         run: |
-          mv app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/PhoneBlocker-${{ steps.get_version.outputs.VERSION }}-debug.apk
-          mv app/build/outputs/apk/release/app-release-unsigned.apk app/build/outputs/apk/release/PhoneBlocker-${{ steps.get_version.outputs.VERSION }}-release.apk
+          VERSION=${{ steps.get_version.outputs.VERSION }}
+          # Versioned names
+          mv app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/PhoneBlocker-${VERSION}-debug.apk
+          mv app/build/outputs/apk/release/app-release-unsigned.apk app/build/outputs/apk/release/PhoneBlocker-${VERSION}-release.apk
+          # Also create non-versioned copy for "latest" download link
+          cp app/build/outputs/apk/release/PhoneBlocker-${VERSION}-release.apk app/build/outputs/apk/release/PhoneBlocker-release.apk
 
       - name: Upload Debug APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: PhoneBlocker-${{ steps.get_version.outputs.VERSION }}-debug
+          name: PhoneBlocker-debug
           path: app/build/outputs/apk/debug/PhoneBlocker-${{ steps.get_version.outputs.VERSION }}-debug.apk
 
       - name: Upload Release APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: PhoneBlocker-${{ steps.get_version.outputs.VERSION }}-release
-          path: app/build/outputs/apk/release/PhoneBlocker-${{ steps.get_version.outputs.VERSION }}-release.apk
+          name: PhoneBlocker-release
+          path: app/build/outputs/apk/release/PhoneBlocker-*.apk
 
       - name: Create Release
         if: github.event_name == 'push' || github.event.inputs.create_release == 'true'
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ steps.get_version.outputs.VERSION }}
           name: Phone Blocker ${{ steps.get_version.outputs.VERSION }}
+          draft: false
+          prerelease: false
+          files: |
+            app/build/outputs/apk/debug/PhoneBlocker-${{ steps.get_version.outputs.VERSION }}-debug.apk
+            app/build/outputs/apk/release/PhoneBlocker-${{ steps.get_version.outputs.VERSION }}-release.apk
+            app/build/outputs/apk/release/PhoneBlocker-release.apk
           body: |
             ## Phone Blocker ${{ steps.get_version.outputs.VERSION }}
             
             ### Downloads
-            - **PhoneBlocker-${{ steps.get_version.outputs.VERSION }}-debug.apk** - Debug build (recommended for testing)
-            - **PhoneBlocker-${{ steps.get_version.outputs.VERSION }}-release.apk** - Release build (unsigned)
+            - **PhoneBlocker-release.apk** - Release build (recommended)
+            - **PhoneBlocker-${{ steps.get_version.outputs.VERSION }}-release.apk** - Same as above, versioned filename
+            - **PhoneBlocker-${{ steps.get_version.outputs.VERSION }}-debug.apk** - Debug build
             
             ### Installation
             1. Download the APK file
-            2. Enable "Install from unknown sources" in Android Settings
+            2. Enable "Install from unknown sources" in Settings
             3. Open the APK to install
-            4. Grant permissions when prompted
+            4. Grant Phone and Call Logs permissions
             
-            See [README](https://github.com/${{ github.repository }}/blob/main/README.md) for detailed instructions.
-          files: |
-            app/build/outputs/apk/debug/PhoneBlocker-${{ steps.get_version.outputs.VERSION }}-debug.apk
-            app/build/outputs/apk/release/PhoneBlocker-${{ steps.get_version.outputs.VERSION }}-release.apk
-          draft: false
-          prerelease: false
+            ### Features
+            - Pattern matching with wildcards (`*` = any digits, `?` = one digit)
+            - 4 actions: Allow, Block, Silence, Voicemail
+            - ALLOW rules have highest priority (whitelist)
+            - Call Log to see incoming numbers and matched rules
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

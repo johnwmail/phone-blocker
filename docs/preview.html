@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phone Blocker - UI Preview</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .phone-frame {
+            width: 320px;
+            height: 640px;
+            background: #1a1a1a;
+            border-radius: 40px;
+            padding: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        }
+        .phone-screen {
+            width: 100%;
+            height: 100%;
+            background: #f5f5f5;
+            border-radius: 32px;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        .header {
+            background: #1976D2;
+            color: white;
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 { font-size: 18px; font-weight: 600; }
+        .header-buttons { display: flex; gap: 8px; }
+        .header-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .header-btn:hover { background: rgba(255,255,255,0.3); }
+        .status {
+            background: #E8F5E9;
+            color: #2E7D32;
+            padding: 10px 16px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+        .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+        .rule-card {
+            background: white;
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .rule-info { flex: 1; }
+        .rule-pattern { font-size: 16px; font-weight: 600; font-family: monospace; }
+        .rule-action { font-size: 12px; color: #666; margin-top: 2px; }
+        .rule-action.allow { color: #2E7D32; }
+        .rule-action.block { color: #D32F2F; }
+        .rule-action.silence { color: #F57C00; }
+        .rule-action.voicemail { color: #7B1FA2; }
+        .toggle {
+            width: 44px;
+            height: 24px;
+            background: #ccc;
+            border-radius: 12px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .toggle.on { background: #4CAF50; }
+        .toggle::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: left 0.2s;
+        }
+        .toggle.on::after { left: 22px; }
+        .delete-btn {
+            background: none;
+            border: none;
+            color: #999;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 4px;
+        }
+        .delete-btn:hover { color: #D32F2F; }
+        .fab {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            background: #1976D2;
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 28px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(25,118,210,0.4);
+        }
+        .fab:hover { background: #1565C0; }
+        
+        /* Dialog */
+        .dialog-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        .dialog-overlay.hidden { display: none; }
+        .dialog {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            width: 300px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        .dialog h2 { margin-bottom: 20px; font-size: 18px; }
+        .dialog label { display: block; margin-bottom: 6px; color: #666; font-size: 13px; }
+        .dialog input, .dialog select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 16px;
+        }
+        .dialog-buttons { display: flex; gap: 12px; margin-top: 20px; }
+        .dialog-buttons button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .btn-cancel { background: #eee; color: #333; }
+        .btn-add { background: #1976D2; color: white; }
+        .help-text { font-size: 11px; color: #999; margin-top: -12px; margin-bottom: 16px; }
+        
+        /* Log Screen */
+        .log-screen { display: none; flex-direction: column; height: 100%; }
+        .log-screen.active { display: flex; }
+        .main-screen.hidden { display: none; }
+        .log-header {
+            background: #1976D2;
+            color: white;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .back-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        .log-header h1 { font-size: 18px; flex: 1; }
+        .clear-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+        }
+        .log-content { flex: 1; overflow-y: auto; padding: 12px; }
+        .log-entry {
+            background: white;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 8px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .log-number { font-family: monospace; font-size: 15px; font-weight: 600; }
+        .log-time { font-size: 11px; color: #999; }
+        .log-status { font-size: 12px; margin-top: 4px; }
+        .log-status.blocked { color: #D32F2F; }
+        .log-status.allowed { color: #2E7D32; }
+        .log-status.silenced { color: #F57C00; }
+        .log-status.voicemail { color: #7B1FA2; }
+        .log-status.nomatch { color: #666; }
+        .log-pattern { font-size: 11px; color: #999; font-family: monospace; }
+        
+        .nav-hint {
+            text-align: center;
+            padding: 10px;
+            font-size: 12px;
+            color: #666;
+            background: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <div class="phone-frame">
+        <div class="phone-screen">
+            <!-- Main Screen -->
+            <div class="main-screen" id="mainScreen">
+                <div class="header">
+                    <h1>📵 Phone Blocker</h1>
+                    <div class="header-buttons">
+                        <button class="header-btn" onclick="showLogScreen()">📋 Log</button>
+                    </div>
+                </div>
+                <div class="status">✅ Active & Ready</div>
+                <div class="content" id="rulesContainer">
+                    <!-- Rules will be rendered here -->
+                </div>
+                <button class="fab" onclick="showDialog()">+</button>
+            </div>
+            
+            <!-- Log Screen -->
+            <div class="log-screen" id="logScreen">
+                <div class="log-header">
+                    <button class="back-btn" onclick="hideLogScreen()">←</button>
+                    <h1>Call Log</h1>
+                    <button class="clear-btn" onclick="clearLogs()">🗑</button>
+                </div>
+                <div class="log-content" id="logContainer">
+                    <!-- Logs will be rendered here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add Rule Dialog -->
+    <div class="dialog-overlay hidden" id="dialogOverlay" onclick="hideDialog()">
+        <div class="dialog" onclick="event.stopPropagation()">
+            <h2>Add Block Rule</h2>
+            <label>Pattern</label>
+            <input type="text" id="patternInput" placeholder="e.g., 86* or 138????????">
+            <div class="help-text">* = any digits, ? = one digit</div>
+            <label>Action</label>
+            <select id="actionSelect">
+                <option value="ALLOW">✅ Allow (whitelist)</option>
+                <option value="BLOCK" selected>🚫 Block</option>
+                <option value="SILENCE">🔇 Silence</option>
+                <option value="VOICEMAIL">📞 Voicemail</option>
+            </select>
+            <div class="dialog-buttons">
+                <button class="btn-cancel" onclick="hideDialog()">Cancel</button>
+                <button class="btn-add" onclick="addRule()">Add</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let rules = [
+            { id: 1, pattern: '865*', action: 'ALLOW', enabled: true },
+            { id: 2, pattern: '86*', action: 'BLOCK', enabled: true },
+            { id: 3, pattern: '1800*', action: 'SILENCE', enabled: true },
+            { id: 4, pattern: '400*', action: 'VOICEMAIL', enabled: false }
+        ];
+        
+        let logs = [
+            { number: '+8651012345678', time: '10:23 AM', status: 'ALLOW', pattern: '865*' },
+            { number: '+8613912345678', time: '10:15 AM', status: 'BLOCK', pattern: '86*' },
+            { number: '18001234567', time: '9:58 AM', status: 'SILENCE', pattern: '1800*' },
+            { number: '02155551234', time: '9:30 AM', status: 'NOT MATCH', pattern: null },
+            { number: '+8640012345678', time: '9:15 AM', status: 'VOICEMAIL', pattern: '400*' }
+        ];
+        
+        function renderRules() {
+            const container = document.getElementById('rulesContainer');
+            if (rules.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">📱</div>
+                        <p>No rules yet</p>
+                        <p style="font-size:12px;margin-top:10px;">Tap + to add a rule<br><br>
+                        Examples:<br>
+                        <code>86*</code> - Block all 86 prefix<br>
+                        <code>138????????</code> - Block 11-digit 138 numbers</p>
+                    </div>`;
+                return;
+            }
+            
+            // Sort: ALLOW first, then by id
+            const sorted = [...rules].sort((a, b) => {
+                if (a.action === 'ALLOW' && b.action !== 'ALLOW') return -1;
+                if (a.action !== 'ALLOW' && b.action === 'ALLOW') return 1;
+                return a.id - b.id;
+            });
+            
+            container.innerHTML = sorted.map(rule => `
+                <div class="rule-card">
+                    <div class="rule-info">
+                        <div class="rule-pattern">${rule.pattern}</div>
+                        <div class="rule-action ${rule.action.toLowerCase()}">${getActionLabel(rule.action)}</div>
+                    </div>
+                    <div class="toggle ${rule.enabled ? 'on' : ''}" onclick="toggleRule(${rule.id})"></div>
+                    <button class="delete-btn" onclick="deleteRule(${rule.id})">🗑</button>
+                </div>
+            `).join('');
+        }
+        
+        function getActionLabel(action) {
+            switch(action) {
+                case 'ALLOW': return '✅ Allow';
+                case 'BLOCK': return '🚫 Block';
+                case 'SILENCE': return '🔇 Silence';
+                case 'VOICEMAIL': return '📞 Voicemail';
+                default: return action;
+            }
+        }
+        
+        function renderLogs() {
+            const container = document.getElementById('logContainer');
+            if (logs.length === 0) {
+                container.innerHTML = '<div class="empty-state"><p>No call logs yet</p></div>';
+                return;
+            }
+            container.innerHTML = logs.map(log => `
+                <div class="log-entry">
+                    <div class="log-number">${log.number}</div>
+                    <div class="log-time">${log.time}</div>
+                    <div class="log-status ${log.status.toLowerCase().replace(' ', '')}">${getStatusLabel(log.status)}</div>
+                    ${log.pattern ? `<div class="log-pattern">Pattern: ${log.pattern}</div>` : ''}
+                </div>
+            `).join('');
+        }
+        
+        function getStatusLabel(status) {
+            switch(status) {
+                case 'ALLOW': return '✅ ALLOW';
+                case 'BLOCK': return '🚫 BLOCKED';
+                case 'SILENCE': return '🔇 SILENCED';
+                case 'VOICEMAIL': return '📞 VOICEMAIL';
+                case 'NOT MATCH': return '⚪ NOT MATCH';
+                default: return status;
+            }
+        }
+        
+        function toggleRule(id) {
+            const rule = rules.find(r => r.id === id);
+            if (rule) rule.enabled = !rule.enabled;
+            renderRules();
+        }
+        
+        function deleteRule(id) {
+            rules = rules.filter(r => r.id !== id);
+            renderRules();
+        }
+        
+        function showDialog() {
+            document.getElementById('dialogOverlay').classList.remove('hidden');
+            document.getElementById('patternInput').value = '';
+            document.getElementById('patternInput').focus();
+        }
+        
+        function hideDialog() {
+            document.getElementById('dialogOverlay').classList.add('hidden');
+        }
+        
+        function addRule() {
+            const pattern = document.getElementById('patternInput').value.trim();
+            const action = document.getElementById('actionSelect').value;
+            if (pattern && /^[0-9*?]+$/.test(pattern)) {
+                rules.push({ id: Date.now(), pattern, action, enabled: true });
+                renderRules();
+                hideDialog();
+            } else {
+                alert('Invalid pattern. Use digits, * and ? only.');
+            }
+        }
+        
+        function showLogScreen() {
+            document.getElementById('mainScreen').classList.add('hidden');
+            document.getElementById('logScreen').classList.add('active');
+            renderLogs();
+        }
+        
+        function hideLogScreen() {
+            document.getElementById('mainScreen').classList.remove('hidden');
+            document.getElementById('logScreen').classList.remove('active');
+        }
+        
+        function clearLogs() {
+            logs = [];
+            renderLogs();
+        }
+        
+        // Initial render
+        renderRules();
+    </script>
+</body>
+</html>

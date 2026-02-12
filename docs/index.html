@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phone Blocker - Android Call Blocker App</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        h1 { color: #1976D2; margin-bottom: 10px; }
+        .subtitle { color: #666; margin-bottom: 30px; }
+        .download-btn {
+            display: inline-block;
+            background: #1976D2;
+            color: white;
+            padding: 15px 40px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .download-btn:hover { background: #1565C0; }
+        .links { margin-top: 20px; }
+        .links a {
+            color: #1976D2;
+            text-decoration: none;
+            margin: 0 10px;
+            font-size: 14px;
+        }
+        .links a:hover { text-decoration: underline; }
+        .features {
+            text-align: left;
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+        }
+        .features h3 { margin-top: 0; color: #333; }
+        .features ul { margin: 0; padding-left: 20px; }
+        .features li { margin: 8px 0; color: #555; }
+        .version { color: #999; font-size: 12px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>📵 Phone Blocker</h1>
+        <p class="subtitle">Simple Android app to block unwanted calls</p>
+        
+        <a href="https://github.com/johnwmail/phone-blocker/releases/latest/download/PhoneBlocker-release.apk" class="download-btn">⬇️ Download APK</a>
+        
+        <div class="links">
+            <a href="preview.html">👀 Preview UI</a>
+            <a href="https://github.com/johnwmail/phone-blocker">💻 GitHub</a>
+            <a href="https://github.com/johnwmail/phone-blocker/releases">📦 All Releases</a>
+        </div>
+        
+        <div class="features">
+            <h3>✨ Features</h3>
+            <ul>
+                <li><strong>Pattern Matching</strong> - Use wildcards: <code>86*</code>, <code>138????????</code></li>
+                <li><strong>4 Actions</strong> - Allow, Block, Silence, Voicemail</li>
+                <li><strong>Priority System</strong> - ALLOW rules checked first (whitelist)</li>
+                <li><strong>Call Log</strong> - View incoming calls with raw number format</li>
+                <li><strong>Simple UI</strong> - Easy to add, manage, and delete rules</li>
+            </ul>
+        </div>
+        
+        <div class="features">
+            <h3>📱 Requirements</h3>
+            <ul>
+                <li>Android 10+ (API 29+)</li>
+                <li>Permissions: Phone, Call Logs</li>
+            </ul>
+        </div>
+        
+        <p class="version">
+            <a href="https://github.com/johnwmail/phone-blocker/releases">View all releases</a>
+        </p>
+    </div>
+</body>
+</html>
